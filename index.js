@@ -4,6 +4,11 @@ const fs = require('fs').promises;
 const path = require('path');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
+const cors = require('cors');
+
+const app = express();
+app.use(cors()); // Allow CORS for all origins
+
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
