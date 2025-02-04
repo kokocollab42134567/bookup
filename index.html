@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Reader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .book-container {
+            width: 60%;
+            max-width: 800px;
+            height: 500px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .page {
+            display: none;
+        }
+        .active-page {
+            display: block;
+        }
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .prev { left: 10px; }
+        .next { right: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="book-container">
+        <div id="book-pages"></div>
+        <button class="nav-btn prev" onclick="prevPage()">❮</button>
+        <button class="nav-btn next" onclick="nextPage()">❯</button>
+    </div>
+
+    <script>
+        async function loadBook() {
+            const response = await fetch('/books/1738701913475.ryobk');
+            const encodedContent = await response.text();
+            const decodedContent = atob(encodedContent); // Decode Base64
+
+            // Split content into pages
+            const words = decodedContent.split(" ");
+            const wordsPerPage = 100;
+            let pages = [];
+            for (let i = 0; i < words.length; i += wordsPerPage) {
+                pages.push(words.slice(i, i + wordsPerPage).join(" "));
+            }
+
+            const bookContainer = document.getElementById("book-pages");
+            pages.forEach((text, index) => {
+                const pageDiv = document.createElement("div");
+                pageDiv.classList.add("page", "p-4", "text-lg", "font-serif", "leading-loose");
+                if (index === 0) pageDiv.classList.add("active-page");
+                pageDiv.innerHTML = text.replace(/\n/g, "<br>");
+                bookContainer.appendChild(pageDiv);
+            });
+        }
+
+        let currentPage = 0;
+        function showPage(page) {
+            const pages = document.querySelectorAll(".page");
+            if (page < 0 || page >= pages.length) return;
+            pages[currentPage].classList.remove("active-page");
+            pages[page].classList.add("active-page");
+            currentPage = page;
+        }
+
+        function nextPage() { showPage(currentPage + 1); }
+        function prevPage() { showPage(currentPage - 1); }
+
+        window.onload = loadBook;
+    </script>
+
+</body>
+</html>
