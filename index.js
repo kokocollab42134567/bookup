@@ -6,11 +6,9 @@ const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const cors = require('cors');
 
-app.use(cors()); // Allow CORS for all origins
-
-
 const app = express();
 app.use(cors()); // Allow CORS for all origins
+
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.json());
@@ -27,22 +25,32 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
     try {
         let base64Encoded = '';
-        
-        // Encode PDF or DOCX file to Base64
+        let extractedText = '';
+
+        // Process PDF file
         if (fileType === 'application/pdf') {
             const fileBuffer = await fs.readFile(filePath);
             base64Encoded = fileBuffer.toString('base64');
-        } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+
+            const pdfData = await pdfParse(fileBuffer);
+            extractedText = pdfData.text;
+        }
+        // Process DOCX file
+        else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             const fileBuffer = await fs.readFile(filePath);
             base64Encoded = fileBuffer.toString('base64');
-        } else {
+
+            const docxData = await mammoth.extractRawText({ buffer: fileBuffer });
+            extractedText = docxData.value;
+        }
+        else {
             return res.status(400).json({ error: 'Unsupported file type. Only PDF or DOCX files are allowed.' });
         }
 
         // Delete temporary file after processing
         await fs.unlink(filePath);
 
-        res.json({ fileName, encodedFile: base64Encoded });
+        res.json({ fileName, encodedFile: base64Encoded, extractedText });
     } catch (error) {
         console.error('Error processing file:', error);
         res.status(500).json({ error: 'Error processing the file.' });
